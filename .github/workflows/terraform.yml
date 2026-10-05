@@ -1,49 +1,60 @@
 name: terraform
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
 
 jobs:
   dev:
+    name: Dev
     runs-on: ubuntu-latest
     environment: dev
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v4
-      - run: terraform init -backend-config="key=dev.tfstate" #create a dev env statefile
-      - run: terraform apply -auto-approve -var-file=envs/dev.tfvars
-      
+      - name: Initialize Terraform
+        run: terraform init -reconfigure -backend-config="key=dev.tfstate"
+      - name: Apply dev configuration
+        run: terraform apply -auto-approve -var-file=envs/dev.tfvars
 
   staging:
     needs: dev
+    name: Staging
     runs-on: ubuntu-latest
     environment: staging
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v4
-      - run: terraform init -backend-config="key=staging.tfstate"
-      - run: terraform apply -auto-approve -var-file=envs/staging.tfvars
-      - run: terraform apply -auto-approve -var-file=envs/staging.tfvars
-
+      - name: Initialize Terraform
+        run: terraform init -reconfigure -backend-config="key=staging.tfstate"
+      - name: Apply staging configuration
+        run: terraform apply -auto-approve -var-file=envs/staging.tfvars
 
   prod:
     needs: staging
+    name: Production
     runs-on: ubuntu-latest
     environment: prod
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v4
-      - run: terraform init -backend-config="key=prod.tfstate"
-      - run: terraform apply -auto-approve -var-file=envs/prod.tfvars
+      - name: Initialize Terraform
+        run: terraform init -reconfigure -backend-config="key=prod.tfstate"
+      - name: Apply production configuration
+        run: terraform apply -auto-approve -var-file=envs/prod.tfvars
